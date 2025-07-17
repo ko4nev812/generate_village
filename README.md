@@ -188,3 +188,11 @@ generate_village_image(houses, roads, cell_size=10)
 
 **Возвращает:**
 Список координат клеток дорог
+
+---
+
+**Примеры Деревень**
+
+<img src="Examples_image/(30houses)1.png" alt="30 домов" width="300"/>
+<img src="Examples_image/100h_200r.png" alt="100 домов" width="300"/>
+<img src="Examples_image/400h_300r_10s.png" alt="400 домов" width="300"/>
