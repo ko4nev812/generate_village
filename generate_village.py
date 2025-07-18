@@ -42,7 +42,7 @@ if __name__=='__main__':
     #Минимальным растоянием от дороги до дома 3; Максимальным радиусом деревни 100
     houses, roads = generate_village(house_list, 50, 7, [7,10],3, max_village_radius=100)
     
-    #Создание .png картинки с соотношением 1:10 (1 блок = 10 пикселей на картинке)
+    #Создание .png картинки с маштабом 1:10 (1 блок = 10 пикселей на картинке)
     from vizualization_png import generate_village_image
     generate_village_image(houses, roads, cell_size=10)
     
