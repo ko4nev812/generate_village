@@ -75,7 +75,7 @@ def find_nearest_road(point, road_network):
 def distance(p1, p2):
     """Вычисляет расстояние между двумя точками"""
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
-import heapq
+from collections import deque
 
 def build_path(start, goal, forbidden_rects, grid_size, shift_diagonally=False):
     """Находит путь от start в goal, обходя forbidden_rects"""
@@ -105,23 +105,24 @@ def build_path(start, goal, forbidden_rects, grid_size, shift_diagonally=False):
             for y in range(int(y1), int(y2+1)):
                 blocked.add((x, y))
 
-    frontier = [(0, start)]
-    came_from = {start: None}
-    cost_so_far = {start: 0}
+    frontier = deque()           # Очередь для обработки точек
+    frontier.append(start)
+    
+    came_from = {start: None}    # Словарь "откуда пришли"
+    visited = set()              # Множество посещенных точек
+    visited.add(start)
 
     while frontier:
-        _, current = heapq.heappop(frontier)
+        current = frontier.popleft()  # Берем первую точку из очереди
 
-        if current == goal:
+        if current == goal:      # Если достигли цели
             break
 
         for next_p in neighbors(current):
-            new_cost = cost_so_far[current] + 1
-            if next_p not in cost_so_far or new_cost < cost_so_far[next_p]:
-                cost_so_far[next_p] = new_cost
-                priority = new_cost + heuristic(goal, next_p)
-                heapq.heappush(frontier, (priority, next_p))
+            if next_p not in visited:
+                visited.add(next_p)
                 came_from[next_p] = current
+                frontier.append(next_p)
 
     # Восстановить путь
     if goal not in came_from:

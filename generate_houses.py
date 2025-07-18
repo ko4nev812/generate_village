@@ -48,7 +48,7 @@ def generate_houses(house_list, num_houses, min_dist, attach_dist_min, attach_di
             if 0 in houses_priority:
                 n_ = int(round(house_i[-2] * (num_houses - 1)))
                 if houses_priority[n_] == 0:
-                    houses_priority[n_] = (house_i[0][0], house_i[0][1], house_i[1], house_i[2])
+                    houses_priority[n_] = (house_i[0][0], house_i[0][1], house_i[1], house_i[2], 1)
                 else:
                     delta_r = 1
                     while n_ + delta_r < num_houses:
@@ -62,7 +62,7 @@ def generate_houses(house_list, num_houses, min_dist, attach_dist_min, attach_di
                         delta_l -= 1
                     best_n = min(delta_r, delta_l, key=lambda a: abs(a))
                     if 0 <= n_ + best_n < num_houses:
-                        houses_priority[best_n] = (house_i[0][0], house_i[0][1], house_i[1], house_i[2])
+                        houses_priority[best_n] = (house_i[0][0], house_i[0][1], house_i[1], house_i[2],1)
     
     # Заполняем оставшиеся дома случайными
     for i in range(num_houses):
@@ -70,31 +70,33 @@ def generate_houses(house_list, num_houses, min_dist, attach_dist_min, attach_di
             r = random.random()
             for h in house_random:
                 if h[-3] <= r < h[-2]:
-                    houses_priority[i] = (h[0][0], h[0][1], h[1], h[2])
+                    houses_priority[i] = (h[0][0], h[0][1], h[1], h[2], 0)
 
     # Начинаем с одного дома в центре
     houses = [(0, 0, houses_priority[0][0], houses_priority[0][1], houses_priority[-1])]  # Добавляем размеры дома
     
     # Множество домов, к которым можно пристраивать новые
-    attachable_houses = set([houses[0]])
+    attachable_houses = set([houses[0][:4]])
 
     for i_ in range(num_houses - 1):
         new_house = add_house(
-            houses, attachable_houses, (0,0)+houses_priority[i_+1], 
+            houses, attachable_houses, (0,0)+houses_priority[i_+1][:-1], 
             min_dist, attach_dist_min, attach_dist_max,
             max_village_radius=max_village_radius
         )
         if not new_house == None:
-            houses.append(new_house+tuple([houses_priority[i_+1][-1]]))
+            houses.append(new_house+tuple([houses_priority[i_+1][-2:]]))
             update_attachable_houses(
                 houses, attachable_houses, new_house, min_dist, attach_dist_min, attach_dist_max
             )
+
+
     
     # Собираем итоговый список домов с их типами
     houses_output = []
     for i, house in enumerate(houses):
         if i < len(houses_priority) and type(houses_priority[i]) != int:
-            houses_output.append(house[:2] + houses_priority[i][:])
+            houses_output.append(house[:2] + houses_priority[i][:-1])
     
     return houses_output
 
@@ -134,10 +136,12 @@ def add_house(houses, attachable_houses, info_new_houses, min_dist, attach_dist_
                 continue  # Пропускаем позиции за пределами радиуса
             if valid:
                 return new_house
+        elif valid:
+            return new_house
 
     # Если не получилось, помечаем родительский дом как неприкрепляемый
     attachable_houses.discard(parent_house)
-    return expand_village(houses, min_dist, attach_dist_max, max_village_radius)
+    return expand_village(houses,info_new_houses, min_dist, attach_dist_max, max_village_radius)
 def calculate_house_radius(house):
     """Вычисляет радиус окружности, описывающей дом."""
     x_len, y_len = house[2], house[3]
@@ -146,7 +150,6 @@ def calculate_house_radius(house):
 def update_attachable_houses(houses, attachable_houses, new_house, min_dist, attach_dist_min, attach_dist_max):
     """Обновляет множество attachable_houses с учетом размеров домов."""
     attachable_houses.add(new_house)
-
     for house in list(attachable_houses):
         house_radius = calculate_house_radius(house)
         if not has_space_around(house, houses, min_dist, attach_dist_min, attach_dist_max, house_radius):
@@ -157,7 +160,7 @@ def has_space_around(house, houses, min_dist, attach_dist_min, attach_dist_max, 
     if house_radius is None:
         house_radius = calculate_house_radius(house)
 
-    for _ in range(30):
+    for _ in range(100):
         angle = random.uniform(0, 2 * math.pi)
         distance = random.uniform(attach_dist_min, attach_dist_max)
         
@@ -184,29 +187,30 @@ def has_space_around(house, houses, min_dist, attach_dist_min, attach_dist_max, 
     
     return False
 
-def expand_village(houses, min_dist, attach_dist_max, max_village_radius=None):
+def expand_village(houses,info_new_houses, min_dist, attach_dist_max, max_village_radius=None):
     if not houses:
         return (0, 0, 20, 20)
 
     farthest_house = max(houses, key=lambda h: math.hypot(h[0], h[1]))
     farthest_radius = calculate_house_radius(farthest_house)
-    
+    new_house_radius = calculate_house_radius(info_new_houses)
+
     if max_village_radius is not None:
         current_radius = math.hypot(farthest_house[0], farthest_house[1])
-        if current_radius + attach_dist_max + farthest_radius > max_village_radius:
+        if new_house_radius+ current_radius + attach_dist_max + farthest_radius > max_village_radius:
             # Ищем другое направление внутри допустимого радиуса
             for _ in range(20):  # Пробуем несколько случайных направлений
                 angle = random.uniform(0, 2 * math.pi)
-                distance = min(attach_dist_max, max_village_radius - current_radius - farthest_radius)
+                distance = min(attach_dist_max, max_village_radius-current_radius - new_house_radius - farthest_radius)
                 if distance > min_dist:
                     new_x = farthest_house[0] + round(distance * math.cos(angle))
                     new_y = farthest_house[1] + round(distance * math.sin(angle))
-                    return (new_x, new_y, farthest_house[2], farthest_house[3])
+                    return (new_x, new_y, info_new_houses[2], info_new_houses[3])
             return None
     
     # Стандартная логика, если радиус не ограничен
-    angle = math.atan2(farthest_house[1], farthest_house[0])
-    distance = attach_dist_max + farthest_radius
+    angle = math.atan2(farthest_house[1], farthest_house[0])+random.uniform(-0.5*math.pi, 0.5*math.pi)
+    distance = attach_dist_max + farthest_radius + new_house_radius
     new_x = farthest_house[0] + round(distance * math.cos(angle))
     new_y = farthest_house[1] + round(distance * math.sin(angle))
-    return (new_x, new_y, farthest_house[2], farthest_house[3])
+    return (new_x, new_y, info_new_houses[2], info_new_houses[3])
