@@ -26,7 +26,7 @@ def generate_village_image(houses, roads, output_file="village.png", cell_size=2
     all_points = []
     for house in houses:
         x, y, w, h, _, id_houses = house
-        all_points.extend([(x-w//2, y-h//2), (x+w//2, y+h//2)])
+        all_points.extend([(x, y), (x+w, y+h)])
     for road in roads:
         all_points.extend(road)
     
@@ -67,8 +67,8 @@ def generate_village_image(houses, roads, output_file="village.png", cell_size=2
         x, y, w, h, door, house_id = house
         
         # Координаты дома в пикселях
-        x1, y1 = to_pixel(x - w//2, y - h//2)
-        x2, y2 = to_pixel(x + w//2, y + h//2)
+        x1, y1 = to_pixel(x, y)
+        x2, y2 = to_pixel(x + w, y + h)
         
         # Упорядочиваем координаты
         x1, x2 = sorted([x1, x2])
@@ -82,8 +82,8 @@ def generate_village_image(houses, roads, output_file="village.png", cell_size=2
         )
         
         # Рисуем дверь
-        door_x = x - w//2 + door - 1
-        door_px, door_py = to_pixel(door_x, y - h//2)
+        door_x = x + door - 1
+        door_px, door_py = to_pixel(door_x, y)
         draw.rectangle(
             [door_px, door_py - cell_size//2 - 1, door_px + cell_size - 1, door_py],
             fill=(160, 0, 0),

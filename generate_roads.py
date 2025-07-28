@@ -7,7 +7,7 @@ def generate_roads(houses, min_distance=2, delta_grid_size=30, shift_diagonally=
     Параметры
     -------
     houses : list
-        список домов (x центр, y центр, x длина, y длина, положение двери, id_дома)
+        список домов (x, y, x длина, y длина, положение двери, id_дома)
     min_distance : int
         минимальная дистанция между домом и дорогой
     delta_grid_size : int
@@ -27,14 +27,14 @@ def generate_roads(houses, min_distance=2, delta_grid_size=30, shift_diagonally=
     for i, house in enumerate(houses):
         x, y, w, h, door, _id = house
         # Определяем точку перед дверью (отступ min_distance)
-        door_x = x - w//2 + door - 1
-        door_y = y - h//2 - min_distance
+        door_x = x + door - 1
+        door_y = y - min_distance
         door_pos = (door_x, door_y)
         door_positions.append(door_pos)
-        x1 = x - w//2 - min_distance
-        y1 = y - h//2 - min_distance+1
-        x2 = x + w//2 + min_distance
-        y2 = y + h//2 + min_distance
+        x1 = x - min_distance
+        y1 = y - min_distance+1
+        x2 = x + w + min_distance
+        y2 = y + h + min_distance
         # Запоминаем границы дома с учетом min_distance
         house_map[i] = {
             'x1': x1,
@@ -75,7 +75,6 @@ def find_nearest_road(point, road_network):
 def distance(p1, p2):
     """Вычисляет расстояние между двумя точками"""
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
-from collections import deque
 
 def build_path(start, goal, forbidden_rects, grid_size, shift_diagonally=False):
     """Находит путь от start в goal, обходя forbidden_rects"""
@@ -105,17 +104,16 @@ def build_path(start, goal, forbidden_rects, grid_size, shift_diagonally=False):
             for y in range(int(y1), int(y2+1)):
                 blocked.add((x, y))
 
-    frontier = deque()           # Очередь для обработки точек
-    frontier.append(start)
-    
-    came_from = {start: None}    # Словарь "откуда пришли"
-    visited = set()              # Множество посещенных точек
-    visited.add(start)
+    frontier = [start]               # Очередь для обработки точек
+    came_from = {start: None}        # Откуда пришли
+    visited = {start}                # Посещённые точки
 
-    while frontier:
-        current = frontier.popleft()  # Берем первую точку из очереди
+    i = 0  # Указатель начала очереди
+    while i < len(frontier):        # Пока есть точки в очереди
+        current = frontier[i]
+        i += 1
 
-        if current == goal:      # Если достигли цели
+        if current == goal:
             break
 
         for next_p in neighbors(current):
