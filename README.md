@@ -180,7 +180,7 @@ houses = generator.generate_houses(house_templates, count_house)
    * `min_dist` — минимальное расстояние между домами
    * `attach_dist_min` / `attach_dist_max` — диапазон расстояний до родителя
    * `max_village_radius` — максимальный радиус деревни
-   * `seed` — 
+   * `seed` — сид генерации (None - случайный)
 2. При генерации:
    * `house_templates` — список шаблонов домов
    * `count_house` — целевое количество домов
